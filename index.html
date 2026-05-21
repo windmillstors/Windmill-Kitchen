@@ -805,9 +805,9 @@ window.storageReady = (async function initStorage(){
     // Never commit real keys to version control. Use environment variables
     // or a server-side config endpoint to inject them at deploy time.
     const firebaseConfig = {
-      apiKey: window.FIREBASE_API_KEY || "",
-      databaseURL: window.FIREBASE_DATABASE_URL || "",
-      projectId: window.FIREBASE_PROJECT_ID || ""
+      apiKey: window.FIREBASE_API_KEY || "AIzaSyCg9-Nn1BuNkDtyOfZ7kh2g3f6iQJPSd6g",
+      databaseURL: window.FIREBASE_DATABASE_URL || "https://windmill-kitchen-default-rtdb.firebaseio.com/",
+      projectId: window.FIREBASE_PROJECT_ID || "windmill-kitchen"
     };
     if(!firebaseConfig.apiKey || !firebaseConfig.databaseURL){
       throw new Error("Firebase config not set — falling back to local storage");
