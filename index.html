@@ -336,7 +336,7 @@
         Unlock
       </button>
     </div>
-    <div style="font-size:11px;color:var(--chocolate-soft);margin-top:12px;font-family:'DM Mono',monospace">Default: windmill123 · change in Settings</div>
+    <div style="font-size:11px;color:var(--chocolate-soft);margin-top:12px;font-family:'DM Mono',monospace">Change password in Settings</div>
   </div>
 </div>
 
@@ -405,7 +405,7 @@
       </div>
     </div>
     <div class="header-meta">
-      <div class="live-pill"><span class="pulse"></span><span>LIVE · SYNCING</span></div>
+      <div class="live-pill" id="livePill"><span class="pulse" id="liveDot"></span><span id="liveLabel">Connecting…</span></div>
       <div class="clock" id="clock">--:--:--</div>
       <button class="btn-ghost" id="chefBtn" title="Chef Login">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
@@ -801,11 +801,17 @@ window.storageReady = (async function initStorage(){
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
     const { getDatabase, ref, get, set, onValue } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
 
+    // ⚠️  Replace these values with your own Firebase project credentials.
+    // Never commit real keys to version control. Use environment variables
+    // or a server-side config endpoint to inject them at deploy time.
     const firebaseConfig = {
-      apiKey: "AIzaSyCg9-Nn1BuNkDtyOfZ7kh2g3f6iQJPSd6g",
-      databaseURL: "https://windmill-kitchen-default-rtdb.firebaseio.com",
-      projectId: "windmill-kitchen"
+      apiKey: window.FIREBASE_API_KEY || "",
+      databaseURL: window.FIREBASE_DATABASE_URL || "",
+      projectId: window.FIREBASE_PROJECT_ID || ""
     };
+    if(!firebaseConfig.apiKey || !firebaseConfig.databaseURL){
+      throw new Error("Firebase config not set — falling back to local storage");
+    }
     const fbApp = initializeApp(firebaseConfig);
     const fbDb  = getDatabase(fbApp);
 
@@ -954,7 +960,23 @@ window.storageReady = (async function initStorage(){
     const btn = e.target.closest('[data-rm-cat]');
     if(!btn) return;
     const cat = btn.dataset.rmCat;
-    if(!confirm(`Remove category "${cat}"? Items with this category will keep it until re-saved.`)) return;
+    const affectedItems = items.filter(i=>i.category===cat);
+    let msg = `Remove category "${cat}"?`;
+    if(affectedItems.length > 0){
+      msg += `
+
+${affectedItems.length} item${affectedItems.length>1?'s':''} currently use this category.`;
+      msg += `
+
+Click OK to reassign them to Other, or Cancel to keep the category.`;
+    }
+    if(!confirm(msg)) return;
+    if(affectedItems.length > 0){
+      items = items.map(i => i.category===cat ? {...i, category:'Other'} : i);
+      await saveItems();
+      renderAll();
+      toast(`${affectedItems.length} item${affectedItems.length>1?'s':''} reassigned to Other`);
+    }
     customCats = customCats.filter(c=>c!==cat);
     await saveCats();
     rebuildCatSelect();
@@ -1524,9 +1546,13 @@ window.storageReady = (async function initStorage(){
     else if(act==='edit') requireAuth('Chef access needed to edit items', ()=>openItemModal(item));
     else if(act==='del'){
       requireAuth('Chef access needed to delete items', async ()=>{
-        if(confirm(`Delete "${item.name}"?\n\nNote: Its transaction history will remain in the log.`)){
+        const relatedTxCount = transactions.filter(t=>t.itemId===id).length;
+        const txNote = relatedTxCount > 0 ? `\n\nThis will also delete ${relatedTxCount} related transaction record${relatedTxCount>1?'s':''} from the log.` : '';
+        if(confirm(`Delete "${item.name}"?${txNote}`)){
           items = items.filter(i=>i.id!==id);
+          transactions = transactions.filter(t=>t.itemId!==id);
           await saveItems();
+          await saveTx();
           renderAll();
           toast('Item deleted');
         }
@@ -1542,7 +1568,7 @@ window.storageReady = (async function initStorage(){
     const tx = transactions.find(t=>t.id===txId);
     if(!tx) return;
     requireAuth('Chef access needed to delete records', async ()=>{
-      if(confirm(`Delete this ${tx.type.toUpperCase()} record for "${tx.itemName}"?\n\nQty: ${tx.qty}\nThis will adjust stock back.`)){
+      if(confirm(`Delete this ${tx.type.toUpperCase()} record for "${tx.itemName}"?\n\nQty: ${tx.qty}\n${tx.type==='in'?'Stock will be reduced.':'Stock will be restored.'}`)){
         const item = items.find(i=>i.id===tx.itemId);
         if(item){
           if(typeof tx.applied === 'number'){
@@ -1553,10 +1579,12 @@ window.storageReady = (async function initStorage(){
             if(tx.type==='in') item.qty = Math.max(0, item.qty - tx.qty);
             else item.qty += tx.qty;
           }
+          items = items.map(i => i.id===item.id ? item : i);
+          await saveItems();
         }
+        // item නැතිනම් (deleted item) — transaction ek vitharai delete karanawa
         transactions = transactions.filter(t=>t.id!==txId);
         await saveTx();
-        await saveItems();
         renderAll();
         toast('Transaction deleted');
       }
@@ -1764,7 +1792,7 @@ window.storageReady = (async function initStorage(){
               <div class="log-meta">${esc(t.from||'—')}${t.person?'<br><span style="font-size:10.5px">👤 '+esc(t.person)+'</span>':''}</div>
               <div class="log-meta">${esc(t.to||'—')}</div>
               <div class="log-date">${fmtDateShort(t.date)}</div>
-              <div></div>
+              <div><button class="log-delete" data-del-tx="${t.id}" title="Delete record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button></div>
             </div>`).join('')}
       </div>
     `;
@@ -1848,12 +1876,12 @@ window.storageReady = (async function initStorage(){
       if(!confirm('Are you absolutely sure? Type the word "reset" in the next prompt.')) return;
       const word = prompt('Type "reset" to confirm:');
       if(word !== 'reset'){ toast('Reset cancelled'); return; }
-      items = [...SAMPLE_ITEMS];
-      transactions = [...SAMPLE_TX];
+      items = [];
+      transactions = [];
       await saveItems();
       await saveTx();
       renderAll();
-      toast('Data reset to defaults');
+      toast('All data cleared · fresh start');
     });
   };
 
@@ -1987,6 +2015,26 @@ window.storageReady = (async function initStorage(){
       if(mode === 'firebase') subEl.textContent = 'Live · synced across devices';
       else if(mode === 'local-file') subEl.textContent = 'Local only · host via http to sync';
       else subEl.textContent = 'Local only · offline mode';
+    }
+    // Update the live pill in the header to reflect actual sync state
+    const liveLabel = document.getElementById('liveLabel');
+    const liveDot   = document.getElementById('liveDot');
+    const livePill  = document.getElementById('livePill');
+    if(liveLabel && liveDot && livePill){
+      if(mode === 'firebase'){
+        liveLabel.textContent = 'LIVE · SYNCING';
+        liveDot.style.display = '';
+      } else if(mode === 'local-file'){
+        liveLabel.textContent = 'LOCAL · FILE MODE';
+        liveDot.style.background = '#C8893A';
+        liveDot.style.boxShadow  = 'none';
+        liveDot.style.animation  = 'none';
+      } else {
+        liveLabel.textContent = 'OFFLINE · LOCAL';
+        liveDot.style.background = '#9B2C3F';
+        liveDot.style.boxShadow  = 'none';
+        liveDot.style.animation  = 'none';
+      }
     }
   })();
 })();
