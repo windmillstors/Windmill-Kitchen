@@ -880,14 +880,34 @@ function wmTouchSync(source){
 function makeLocalShim(){
   return {
     _fb:false,
-    async get(key){ const v = localStorage.getItem('wm_'+fbPath(key)); return v===null ? null : { value:v }; },
-    async set(key,value){ try{ localStorage.setItem('wm_'+fbPath(key), value); }catch(e){} return { value }; },
-    on(){ return ()=>{}; }
+    async get(key){
+      const storageKey = 'wm_'+fbPath(key);
+      const v = localStorage.getItem(storageKey);
+      window.__wmReadSources[fbPath(key)] = 'cache';
+      return v===null ? null : { value:v };
+    },
+    async set(key,value){
+      try{ localStorage.setItem('wm_'+fbPath(key), value); }catch(e){}
+      return { value };
+    },
+    on(key, cb){
+      const storageKey = 'wm_'+fbPath(key);
+      const handler = (e)=>{
+        if(!e || e.storageArea !== localStorage || e.key !== storageKey) return;
+        cb(e.newValue);
+      };
+      window.addEventListener('storage', handler);
+      return ()=>window.removeEventListener('storage', handler);
+    }
   };
 }
 // Write-through cache helpers (so a fresh device has *something* before first snapshot)
 function cacheGet(key){ try{ return localStorage.getItem('wm_'+fbPath(key)); }catch(e){ return null; } }
 function cacheSet(key,val){ try{ localStorage.setItem('wm_'+fbPath(key), val); }catch(e){} }
+
+// Track where the last read for each key came from so we can avoid seeding
+// sample data when Firestore is temporarily unreachable and we're only seeing cache.
+window.__wmReadSources = window.__wmReadSources || {};
 
 const localShim = makeLocalShim();
 window.storage = localShim;     // always defined before app code runs
@@ -914,9 +934,12 @@ window.storageReady = (async function initStorage(){
     } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
 
     const firebaseConfig = {
-      apiKey:      window.FIREBASE_API_KEY      || "AIzaSyCg9-Nn1BuNkDtyOfZ7kh2g3f6iQJPSd6g",
-      projectId:   window.FIREBASE_PROJECT_ID   || "windmill-kitchen",
-      databaseURL: window.FIREBASE_DATABASE_URL || "https://windmill-kitchen-default-rtdb.firebaseio.com/"
+      apiKey:        window.FIREBASE_API_KEY        || "AIzaSyCg9-Nn1BuNkDtyOfZ7kh2g3f6iQJPSd6g",
+      authDomain:    window.FIREBASE_AUTH_DOMAIN    || "windmill-kitchen.firebaseapp.com",
+      projectId:     window.FIREBASE_PROJECT_ID     || "windmill-kitchen",
+      storageBucket: window.FIREBASE_STORAGE_BUCKET || "windmill-kitchen.appspot.com"
+      // NOTE: databaseURL is for the OLD Realtime Database and is NOT used by Firestore.
+      // Firestore connects via firestore.googleapis.com using projectId alone.
     };
 
     const fbApp = initializeApp(firebaseConfig);
@@ -931,7 +954,22 @@ window.storageReady = (async function initStorage(){
 
     // Connectivity probe: read one doc. On a clean project this just returns "not exists"
     // (no error) which still proves we reached Firestore.
-    await withTimeout(getDoc(docRef('__healthcheck')), 8000, 'healthcheck');
+    try{
+      await withTimeout(getDoc(docRef('__healthcheck')), 8000, 'healthcheck');
+    }catch(probeErr){
+      // Surface the REAL reason so it's obvious in the debug panel / console.
+      const code = (probeErr && probeErr.code) || '';
+      let hint = probeErr && probeErr.message || String(probeErr);
+      if(code === 'permission-denied' || /permission/i.test(hint)){
+        hint = 'PERMISSION DENIED — open your Firestore Rules. The database exists but rules block reads/writes.';
+      }else if(/not.?found|does not exist|NOT_FOUND/i.test(hint)){
+        hint = 'PROJECT/DATABASE NOT FOUND — create a Firestore database in this project (Firebase console → Build → Firestore Database → Create).';
+      }else if(/timeout/i.test(hint)){
+        hint = 'TIMED OUT — network blocked Firestore (firestore.googleapis.com). Check ISP/VPN/firewall.';
+      }
+      wmLog('Firestore healthcheck failed: '+hint, 'error');
+      throw probeErr; // fall through to local mode below
+    }
 
     window.storage = {
       _fb:true,
@@ -943,12 +981,15 @@ window.storageReady = (async function initStorage(){
           if(snap.exists()){
             const v = snap.data().value;
             cacheSet(key, v);                          // refresh local cache
+            window.__wmReadSources[fbPath(key)] = 'cloud';
             return { value: v };
           }
+          window.__wmReadSources[fbPath(key)] = 'cloud';
           return null;
         }catch(e){
           wmLog('read failed, using cache for '+key+' ('+e.message+')', 'warn');
           WM_DEBUG.lastSource = 'local cache';
+          window.__wmReadSources[fbPath(key)] = 'cache';
           const c = cacheGet(key);
           return c===null ? null : { value:c };
         }
@@ -1155,8 +1196,9 @@ Click OK to reassign them to Other, or Cancel to keep the category.`;
   async function loadAll(){
     await loadCats();
     await loadTeam();
-    // Is the cloud actually connected? If not, we must NOT seed sample data,
-    // because pushing samples would overwrite real cloud data once we reconnect.
+    // Only seed sample data when Firestore actually answered from the cloud.
+    // If a read falls back to cache because the network is flaky, we must not
+    // invent fresh data and risk overwriting the real dataset later.
     const cloudUp = !!(window.storage && window.storage._fb);
     let hadItems = false, hadTx = false;
     try{
@@ -1164,21 +1206,20 @@ Click OK to reassign them to Other, or Cancel to keep the category.`;
       hadItems = !!itResult;
       items = itResult ? JSON.parse(itResult.value) : [];
     }catch(e){ items = []; }
+    const itemsSource = window.__wmReadSources[fbPath(K_ITEMS)] || 'unknown';
     try{
       const txResult = await window.storage.get(K_TX);
       hadTx = !!txResult;
       transactions = txResult ? JSON.parse(txResult.value) : [];
     }catch(e){ transactions = []; }
+    const txSource = window.__wmReadSources[fbPath(K_TX)] || 'unknown';
 
-    // Seed sample data ONLY when we're truly connected to the cloud and it's empty.
-    // (A brand-new project. Offline => leave arrays empty and wait for the live
-    // snapshot to deliver the real data, so we never clobber other drivers' work.)
+    // Brand-new project on a live Firestore database: seed once.
     if(cloudUp){
-      if(!hadItems){ items = [...SAMPLE_ITEMS]; await saveItems(); }
-      if(!hadTx){ transactions = [...SAMPLE_TX]; await saveTx(); }
+      if(!hadItems && itemsSource === 'cloud'){ items = [...SAMPLE_ITEMS]; await saveItems(); }
+      if(!hadTx && txSource === 'cloud'){ transactions = [...SAMPLE_TX]; await saveTx(); }
     } else {
-      // offline: fall back to samples only if cache had nothing, purely so the
-      // screen isn't blank — these are NEVER written to the cloud here.
+      // Offline/local mode: use demo data only when the cache is empty.
       if(!hadItems) items = [...SAMPLE_ITEMS];
       if(!hadTx) transactions = [...SAMPLE_TX];
     }
