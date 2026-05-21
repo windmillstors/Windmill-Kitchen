@@ -83,17 +83,26 @@
 
   /* STATS */
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:32px}
-  .stat{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;position:relative;overflow:hidden;transition:all .25s}
-  .stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-soft)}
+  .stat{border:1.5px solid transparent;border-radius:18px;padding:18px;position:relative;overflow:hidden;transition:all .25s}
+  .stat::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;opacity:0.18;pointer-events:none}
+  .stat.s-total{background:linear-gradient(135deg,#FFF8EE 0%,#FDEAC4 100%);border-color:rgba(200,137,58,0.25)}
+  .stat.s-total::after{background:#C8893A}
+  .stat.s-stock{background:linear-gradient(135deg,#F0FBF6 0%,#C5EDD6 100%);border-color:rgba(111,168,139,0.3)}
+  .stat.s-stock::after{background:#6FA88B}
+  .stat.s-low{background:linear-gradient(135deg,#FFFCEE 0%,#FDF0C0 100%);border-color:rgba(212,162,76,0.28)}
+  .stat.s-low::after{background:#D4A24C}
+  .stat.s-out{background:linear-gradient(135deg,#FFF5F6 0%,#F8C5CD 100%);border-color:rgba(155,44,63,0.22)}
+  .stat.s-out::after{background:#9B2C3F}
+  .stat:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(62,36,24,0.13)}
   .stat-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.16em;color:var(--caramel-deep)}
   .stat-value{font-family:'Fraunces',serif;font-size:38px;font-weight:500;color:var(--chocolate);line-height:1;margin-top:10px;font-variation-settings:'opsz' 144}
   .stat-note{font-size:11px;color:var(--chocolate-soft);margin-top:8px}
-  .stat-icon{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;opacity:0.9}
+  .stat-icon{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;opacity:0.9;z-index:1}
   .stat-icon svg{width:18px;height:18px}
-  .stat.s-total .stat-icon{background:rgba(200,137,58,0.14);color:var(--caramel-deep)}
-  .stat.s-stock .stat-icon{background:rgba(111,168,139,0.18);color:#3d6b53}
-  .stat.s-low .stat-icon{background:rgba(212,162,76,0.18);color:var(--caramel-deep)}
-  .stat.s-out .stat-icon{background:rgba(155,44,63,0.14);color:var(--berry)}
+  .stat.s-total .stat-icon{background:rgba(200,137,58,0.22);color:var(--caramel-deep)}
+  .stat.s-stock .stat-icon{background:rgba(111,168,139,0.28);color:#3d6b53}
+  .stat.s-low .stat-icon{background:rgba(212,162,76,0.26);color:var(--caramel-deep)}
+  .stat.s-out .stat-icon{background:rgba(155,44,63,0.22);color:var(--berry)}
 
   /* TOOLBAR */
   .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
@@ -118,20 +127,29 @@
 
   /* ITEMS GRID */
   .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
-  .item-card{background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;transition:all .3s;position:relative;animation:fadeUp .5s ease backwards}
+  .item-card{border:1.5px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;transition:all .3s;position:relative;animation:fadeUp .5s ease backwards}
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  .item-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-warm);border-color:var(--caramel)}
-  .item-photo{aspect-ratio:4/3;background:var(--cream-2);position:relative;overflow:hidden;display:grid;place-items:center}
+  .item-card:hover{transform:translateY(-5px);box-shadow:0 14px 40px rgba(62,36,24,0.15)}
+  .item-card.status-in{background:linear-gradient(160deg,#F6FFF9 0%,#E0F5E8 60%,#C8EDD6 100%);border-color:rgba(111,168,139,0.35)}
+  .item-card.status-in:hover{border-color:rgba(111,168,139,0.6);box-shadow:0 14px 40px rgba(111,168,139,0.2)}
+  .item-card.status-low{background:linear-gradient(160deg,#FFFDF0 0%,#FDF5D0 60%,#FAE8A0 100%);border-color:rgba(212,162,76,0.35)}
+  .item-card.status-low:hover{border-color:rgba(212,162,76,0.6);box-shadow:0 14px 40px rgba(212,162,76,0.2)}
+  .item-card.status-out{background:linear-gradient(160deg,#FFF8F9 0%,#FCE8EC 60%,#F5C5CF 100%);border-color:rgba(155,44,63,0.28)}
+  .item-card.status-out:hover{border-color:rgba(155,44,63,0.5);box-shadow:0 14px 40px rgba(155,44,63,0.18)}
+  .item-photo{aspect-ratio:4/3;position:relative;overflow:hidden;display:grid;place-items:center}
+  .item-card.status-in .item-photo{background:linear-gradient(135deg,#D0F0DC,#A8DFB8)}
+  .item-card.status-low .item-photo{background:linear-gradient(135deg,#FDF0C0,#F5D880)}
+  .item-card.status-out .item-photo{background:linear-gradient(135deg,#F8D0D8,#F0A8B4)}
   .item-photo img{width:100%;height:100%;object-fit:cover}
-  .item-photo .placeholder{font-family:'Fraunces',serif;font-size:64px;color:var(--caramel);opacity:0.4}
+  .item-photo .placeholder{font-family:'Fraunces',serif;font-size:64px;color:var(--caramel);opacity:0.5}
   .item-photo .badge{position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:999px;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;font-weight:500;backdrop-filter:blur(8px)}
-  .badge.in-stock{background:rgba(111,168,139,0.9);color:#fff}
-  .badge.low{background:rgba(212,162,76,0.95);color:#fff}
+  .badge.in-stock{background:rgba(111,168,139,0.92);color:#fff}
+  .badge.low{background:rgba(212,162,76,0.97);color:#fff}
   .badge.out{background:rgba(155,44,63,0.92);color:#fff}
-  .item-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .item-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1;background:transparent}
   .item-name{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--chocolate);line-height:1.2;letter-spacing:-0.01em;font-variation-settings:'opsz' 72}
   .item-desc{font-size:12.5px;color:var(--chocolate-soft);line-height:1.5}
-  .qty-row{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--cream);border-radius:12px}
+  .qty-row{display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,0.55);border-radius:12px;border:1px solid rgba(255,255,255,0.7)}
   .qty-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.14em;color:var(--caramel-deep)}
   .qty-value{font-family:'Fraunces',serif;font-size:24px;font-weight:600;color:var(--chocolate);font-variation-settings:'opsz' 72}
   .qty-unit{font-size:12px;color:var(--chocolate-soft);margin-left:4px}
@@ -220,6 +238,16 @@
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:13px 22px;background:var(--chocolate);color:var(--cream);border-radius:14px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:200;display:flex;align-items:center;gap:9px;box-shadow:var(--shadow-warm)}
   .toast svg{width:16px;height:16px}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* PRINT */
+  @media print {
+    .header, .tabs, .toolbar, .report-controls, .toast, .gate, #alertPanelWrap { display: none !important; }
+    .panel { display: block !important; }
+    .panel:not([data-panel="report"]) { display: none !important; }
+    body { background: white; }
+    .app { padding: 0; max-width: 100%; }
+    .log-table, .report-card { break-inside: avoid; }
+  }
 
   .empty{grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--chocolate-soft)}
   .empty .icon{font-size:60px;margin-bottom:14px;opacity:0.4}
@@ -420,6 +448,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Dashboard
     </button>
+    <button class="tab" data-panel="actions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 7l7-7 7 7" opacity=".4"/></svg>
+      Item Actions
+    </button>
     <button class="tab" data-panel="transactions">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7h18M3 12h18M3 17h12"/></svg>
       In / Out Log
@@ -538,28 +570,115 @@
   <!-- ====== REPORT PANEL ====== -->
   <div class="panel" data-panel="report">
     <div class="section-head">
-      <h2>Monthly Report</h2>
+      <h2>Reports & Analytics</h2>
     </div>
-    <div class="report-controls">
-      <div class="field">
-        <label>Month</label>
-        <select id="repMonth"></select>
+    <div class="report-controls" style="flex-wrap:wrap;gap:14px">
+      <!-- Mode toggle -->
+      <div class="filter-group" id="repModeGroup" style="align-self:center">
+        <button class="filter-btn active" data-rep-mode="monthly">Monthly</button>
+        <button class="filter-btn" data-rep-mode="range">Date Range</button>
+        <button class="filter-btn" data-rep-mode="item">By Item</button>
       </div>
-      <div class="field">
-        <label>Year</label>
-        <select id="repYear"></select>
+
+      <!-- Monthly selectors -->
+      <div id="repMonthlyControls" style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="field" style="margin:0;min-width:130px">
+          <label>Month</label>
+          <select id="repMonth"></select>
+        </div>
+        <div class="field" style="margin:0;min-width:90px">
+          <label>Year</label>
+          <select id="repYear"></select>
+        </div>
       </div>
-      <button class="btn-primary" id="genReportBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 12l3-3 4 4 5-5"/></svg>
-        Generate Report
-      </button>
-      <button class="btn-ghost" id="downloadReportBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-        Download CSV
-      </button>
+
+      <!-- Date range selectors (hidden by default) -->
+      <div id="repRangeControls" style="display:none;gap:10px;flex-wrap:wrap">
+        <div class="field" style="margin:0;min-width:160px">
+          <label>From Date</label>
+          <input type="date" id="repFrom">
+        </div>
+        <div class="field" style="margin:0;min-width:160px">
+          <label>To Date</label>
+          <input type="date" id="repTo">
+        </div>
+      </div>
+
+      <!-- Item selector (hidden by default) -->
+      <div id="repItemControls" style="display:none;gap:10px;flex-wrap:wrap">
+        <div class="field" style="margin:0;min-width:220px">
+          <label>Select Item</label>
+          <select id="repItemSel"></select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn-primary" id="genReportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 12l3-3 4 4 5-5"/></svg>
+          Generate
+        </button>
+        <button class="btn-ghost" id="downloadReportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          CSV
+        </button>
+        <button class="btn-ghost" id="printReportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+          Print
+        </button>
+      </div>
     </div>
 
     <div id="reportContent"></div>
+  </div>
+
+  <!-- ====== ITEM ACTIONS PANEL ====== -->
+  <div class="panel" data-panel="actions">
+    <div class="section-head">
+      <h2>Item Actions</h2>
+      <span class="count" id="actionsItemCount">Select an item below</span>
+    </div>
+
+    <!-- Selected item action bar -->
+    <div id="actionBar" style="display:none;background:var(--paper);border:1.5px solid var(--caramel);border-radius:20px;padding:20px 24px;margin-bottom:22px;animation:fadeIn .25s ease">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="actionBarEmoji" style="font-size:32px;line-height:1"></div>
+          <div>
+            <div id="actionBarName" style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--chocolate);line-height:1.1"></div>
+            <div id="actionBarMeta" style="font-size:12px;color:var(--chocolate-soft);margin-top:3px"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <button class="action in-btn" id="actInBtn" style="padding:11px 20px;font-size:13px;border-radius:12px;flex:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            IN
+          </button>
+          <button class="action out-btn" id="actOutBtn" style="padding:11px 20px;font-size:13px;border-radius:12px;flex:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            OUT
+          </button>
+          <button class="action" id="actEditBtn" style="padding:11px 20px;font-size:13px;border-radius:12px;flex:none;display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            Edit
+          </button>
+          <button class="action danger" id="actDelBtn" style="padding:11px 20px;font-size:13px;border-radius:12px;flex:none;display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="toolbar" style="margin-bottom:16px">
+      <div class="search" style="max-width:400px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="actionsSearch" placeholder="Search sweet items...">
+      </div>
+    </div>
+
+    <!-- Items list -->
+    <div id="actionsItemList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
   </div>
 
   <!-- ====== SETTINGS PANEL ====== -->
@@ -1139,7 +1258,7 @@ window.storageReady = (async function initStorage(){
   }
 
   // ===== RENDER ALL =====
-  function renderAll(){ renderDashboard(); renderTransactions(); populateReportSelectors(); }
+  function renderAll(){ renderDashboard(); renderTransactions(); populateReportSelectors(); renderActionsList(); updateActionBar(); }
 
   // ===== ALERT PANEL (inline, below stats) =====
   function renderAlertPanel(){
@@ -1226,9 +1345,9 @@ window.storageReady = (async function initStorage(){
       const outs = transactions.filter(t=>t.itemId===i.id && t.type==='out').sort((a,b)=>new Date(b.date)-new Date(a.date));
       const lastOut = outs.length ? fmtDateShort(outs[0].date) : '—';
       return `
-      <article class="item-card" data-item-id="${i.id}" style="animation-delay:${idx*40}ms">
+      <article class="item-card status-${status}" data-item-id="${i.id}" style="animation-delay:${idx*40}ms">
         <div class="item-photo">${photo}${badge}</div>
-        <div class="item-body">
+        <div class="item-body" style="cursor:pointer" data-act="view-log" data-id="${i.id}" data-name="${esc(i.name)}" title="Click to view transactions log for this item">
           <span class="category-tag">${esc(i.category||'Other')}</span>
           <div class="item-name">${esc(i.name)}</div>
           ${i.desc?`<div class="item-desc">${esc(i.desc)}</div>`:''}
@@ -1240,22 +1359,10 @@ window.storageReady = (async function initStorage(){
             <div class="date-cell"><span class="lbl">↓ Last In</span><span class="val">${fmtDateShort(i.dateIn)}</span></div>
             <div class="date-cell out"><span class="lbl">↑ Last Out</span><span class="val">${lastOut}</span></div>
           </div>
-        </div>
-        <div class="item-actions">
-          <button class="action in-btn" data-act="record-in" data-id="${i.id}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-            IN
-          </button>
-          <button class="action out-btn" data-act="record-out" data-id="${i.id}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-            OUT
-          </button>
-          <button class="action" data-act="edit" data-id="${i.id}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-          </button>
-          <button class="action danger" data-act="del" data-id="${i.id}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-          </button>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:6px;font-size:11px;color:var(--caramel-deep);font-family:'DM Mono',monospace;opacity:0.7">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px"><path d="M3 7h18M3 12h18M3 17h12"/></svg>
+            Tap to view In/Out log
+          </div>
         </div>
       </article>`;
     }).join('');
@@ -1339,13 +1446,33 @@ window.storageReady = (async function initStorage(){
   }
 
   // ===== TABS =====
+  function navigateToTab(panelName){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    const tab = document.querySelector(`.tab[data-panel="${panelName}"]`);
+    if(tab) tab.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    const panel = document.querySelector(`.panel[data-panel="${panelName}"]`);
+    if(panel) panel.classList.add('active');
+    if(panelName==='report') populateReportSelectors();
+    if(panelName==='settings') renderTeamList();
+    if(panelName==='actions'){ renderActionsList(); updateActionBar(); }
+  }
+
+  // Navigate to In/Out Log tab and filter by item name
+  function viewItemLog(itemName){
+    currentTxFilter = 'all';
+    currentTxSearch = itemName;
+    document.getElementById('txSearch').value = itemName;
+    document.querySelectorAll('#txFilterGroup .filter-btn').forEach(b=>b.classList.toggle('active', b.dataset.txFilter==='all'));
+    renderTransactions();
+    navigateToTab('transactions');
+    // scroll to top of log
+    setTimeout(()=>{ document.getElementById('logTable').scrollIntoView({behavior:'smooth', block:'start'}); }, 150);
+  }
+
   document.querySelectorAll('.tab').forEach(tab => {
     tab.onclick = () => {
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      const target = tab.dataset.panel;
-      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-      document.querySelector(`.panel[data-panel="${target}"]`).classList.add('active');
+      navigateToTab(tab.dataset.panel);
     };
   });
 
@@ -1506,9 +1633,113 @@ window.storageReady = (async function initStorage(){
     await saveTx();
     await saveItems();
     
+    const itemNameForLog = item.name;
     toast(`${mode==='in'?'IN':'OUT'}: ${qty} × ${item.name}`);
     renderAll();
     closeTxModal();
+    // Navigate to In/Out Log tab filtered to this item
+    setTimeout(()=>{ viewItemLog(itemNameForLog); }, 300);
+  };
+
+  // ===== ITEM ACTIONS PANEL =====
+  let selectedActionItemId = null;
+  let actionsSearchVal = '';
+
+  function renderActionsList(){
+    const list = document.getElementById('actionsItemList');
+    if(!list) return;
+    const q = actionsSearchVal.toLowerCase();
+    const filtered = items.filter(i =>
+      !q || i.name.toLowerCase().includes(q) || (i.category||'').toLowerCase().includes(q)
+    );
+    document.getElementById('actionsItemCount').textContent = `${filtered.length} item${filtered.length===1?'':'s'}`;
+
+    if(filtered.length===0){
+      list.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">🍰</div><h3>No items found</h3></div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(i => {
+      const status = getStatus(i.qty);
+      const statusColor = status==='out'?'var(--berry)':status==='low'?'var(--gold)':'var(--mint)';
+      const statusLabel = status==='out'?'Out of Stock':status==='low'?'Low Stock':'In Stock';
+      const isSelected = i.id === selectedActionItemId;
+      return `<div class="act-item-card ${isSelected?'act-selected':''}" data-act-select="${i.id}" style="
+        background:var(--paper);border:1.5px solid ${isSelected?'var(--caramel)':'var(--line)'};
+        border-radius:16px;padding:14px 16px;cursor:pointer;transition:all .2s;
+        ${isSelected?'box-shadow:var(--shadow-warm);':''}
+        display:flex;align-items:center;gap:12px;position:relative;overflow:hidden">
+        ${isSelected?`<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--caramel);border-radius:4px 0 0 4px"></div>`:''}
+        <div style="font-size:28px;flex-shrink:0;${isSelected?'margin-left:6px':''}">${emojiFor(i.category)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Fraunces',serif;font-size:16px;font-weight:600;color:var(--chocolate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.name)}</div>
+          <div style="font-size:11px;color:var(--chocolate-soft);margin-top:2px">${esc(i.category||'Other')}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--chocolate)">${i.qty}</div>
+          <div style="font-size:10px;font-family:'DM Mono',monospace;color:${statusColor};text-transform:uppercase;letter-spacing:0.08em">${statusLabel}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function updateActionBar(){
+    const bar = document.getElementById('actionBar');
+    if(!selectedActionItemId){ bar.style.display='none'; return; }
+    const item = items.find(i=>i.id===selectedActionItemId);
+    if(!item){ bar.style.display='none'; return; }
+    bar.style.display='block';
+    document.getElementById('actionBarEmoji').textContent = emojiFor(item.category);
+    document.getElementById('actionBarName').textContent = item.name;
+    document.getElementById('actionBarMeta').textContent = `${item.category} · ${item.qty} units · ${getStatus(item.qty)==='out'?'Out of Stock':getStatus(item.qty)==='low'?'Low Stock':'In Stock'}`;
+  }
+
+  document.getElementById('actionsItemList').addEventListener('click', (e)=>{
+    const card = e.target.closest('[data-act-select]');
+    if(!card) return;
+    selectedActionItemId = card.dataset.actSelect;
+    updateActionBar();
+    renderActionsList();
+  });
+
+  document.getElementById('actionsSearch').addEventListener('input', (e)=>{
+    actionsSearchVal = e.target.value;
+    renderActionsList();
+  });
+
+  document.getElementById('actInBtn').onclick = ()=>{
+    if(!selectedActionItemId) return;
+    requireAuth('Chef access needed to record IN', ()=>openTxModal(selectedActionItemId,'in'));
+  };
+  document.getElementById('actOutBtn').onclick = ()=>{
+    if(!selectedActionItemId) return;
+    requireAuth('Chef access needed to record OUT', ()=>openTxModal(selectedActionItemId,'out'));
+  };
+  document.getElementById('actEditBtn').onclick = ()=>{
+    if(!selectedActionItemId) return;
+    const item = items.find(i=>i.id===selectedActionItemId);
+    if(!item) return;
+    requireAuth('Chef access needed to edit items', ()=>openItemModal(item));
+  };
+  document.getElementById('actDelBtn').onclick = async ()=>{
+    if(!selectedActionItemId) return;
+    const item = items.find(i=>i.id===selectedActionItemId);
+    if(!item) return;
+    requireAuth('Chef access needed to delete items', async ()=>{
+      const relatedTxCount = transactions.filter(t=>t.itemId===item.id).length;
+      const txNote = relatedTxCount > 0 ? `\n\nThis will also delete ${relatedTxCount} related transaction record${relatedTxCount>1?'s':''} from the log.` : '';
+      if(confirm(`Delete "${item.name}"?${txNote}`)){
+        items = items.filter(i=>i.id!==item.id);
+        transactions = transactions.filter(t=>t.itemId!==item.id);
+        selectedActionItemId = null;
+        await saveItems();
+        await saveTx();
+        renderAll();
+        renderActionsList();
+        updateActionBar();
+        toast('Item deleted');
+      }
+    });
   };
 
   // ===== GRID ACTIONS =====
@@ -1519,6 +1750,7 @@ window.storageReady = (async function initStorage(){
     const act = btn.dataset.act;
     const item = items.find(i=>i.id===id);
     if(!item) return;
+    if(act==='view-log'){ viewItemLog(btn.dataset.name); return; }
     if(act==='record-in') requireAuth('Chef access needed to record IN', ()=>openTxModal(id,'in'));
     else if(act==='record-out') requireAuth('Chef access needed to record OUT', ()=>openTxModal(id,'out'));
     else if(act==='edit') requireAuth('Chef access needed to edit items', ()=>openItemModal(item));
@@ -1546,25 +1778,12 @@ window.storageReady = (async function initStorage(){
     const tx = transactions.find(t=>t.id===txId);
     if(!tx) return;
     requireAuth('Chef access needed to delete records', async ()=>{
-      if(confirm(`Delete this ${tx.type.toUpperCase()} record for "${tx.itemName}"?\n\nQty: ${tx.qty}\n${tx.type==='in'?'Stock will be reduced.':'Stock will be restored.'}`)){
-        const item = items.find(i=>i.id===tx.itemId);
-        if(item){
-          if(typeof tx.applied === 'number'){
-            // reverse exactly what this transaction changed
-            item.qty = Math.max(0, item.qty - tx.applied);
-          } else {
-            // fallback for older records without 'applied'
-            if(tx.type==='in') item.qty = Math.max(0, item.qty - tx.qty);
-            else item.qty += tx.qty;
-          }
-          items = items.map(i => i.id===item.id ? item : i);
-          await saveItems();
-        }
-        // item නැතිනම් (deleted item) — transaction ek vitharai delete karanawa
+      if(confirm(`Delete this ${tx.type.toUpperCase()} record for "${tx.itemName}"?\n\nQty: ${tx.qty}\n\nNote: Deleting this log record will NOT change the current stock quantity.`)){
+        // Only delete the log record — do NOT touch item.qty
         transactions = transactions.filter(t=>t.id!==txId);
         await saveTx();
         renderAll();
-        toast('Transaction deleted');
+        toast('Transaction record deleted · stock unchanged');
       }
     });
   });
@@ -1619,43 +1838,136 @@ window.storageReady = (async function initStorage(){
   }
 
   // ===== REPORT =====
+  let currentRepMode = 'monthly';
+
   function populateReportSelectors(){
     const monthSel = document.getElementById('repMonth');
     const yearSel = document.getElementById('repYear');
-    if(monthSel.options.length>0) return;
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    months.forEach((m,i) => {
-      const o = document.createElement('option');
-      o.value = i; o.textContent = m;
-      monthSel.appendChild(o);
-    });
-    const now = new Date();
-    monthSel.value = now.getMonth();
-    for(let y=now.getFullYear()-2; y<=now.getFullYear()+1; y++){
-      const o = document.createElement('option');
-      o.value = y; o.textContent = y;
-      yearSel.appendChild(o);
+    if(monthSel.options.length===0){
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      months.forEach((m,i) => {
+        const o = document.createElement('option');
+        o.value = i; o.textContent = m;
+        monthSel.appendChild(o);
+      });
+      const now = new Date();
+      monthSel.value = now.getMonth();
+      for(let y=now.getFullYear()-2; y<=now.getFullYear()+1; y++){
+        const o = document.createElement('option');
+        o.value = y; o.textContent = y;
+        yearSel.appendChild(o);
+      }
+      yearSel.value = now.getFullYear();
     }
-    yearSel.value = now.getFullYear();
+    // Set default date range
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    document.getElementById('repFrom').value = firstDay.toISOString().slice(0,10);
+    document.getElementById('repTo').value = now.toISOString().slice(0,10);
+    // Populate item selector
+    const itemSel = document.getElementById('repItemSel');
+    itemSel.innerHTML = '';
+    const itemNames = [...new Set(transactions.map(t=>t.itemName))].sort();
+    itemNames.forEach(n => {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = n;
+      itemSel.appendChild(o);
+    });
+    if(items.length > 0 && itemSel.options.length === 0){
+      items.forEach(i => {
+        const o = document.createElement('option');
+        o.value = i.name; o.textContent = i.name;
+        itemSel.appendChild(o);
+      });
+    }
   }
 
+  // Report mode toggle
+  document.getElementById('repModeGroup').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-rep-mode]');
+    if(!btn) return;
+    document.querySelectorAll('#repModeGroup .filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentRepMode = btn.dataset.repMode;
+    document.getElementById('repMonthlyControls').style.display = currentRepMode==='monthly' ? 'flex' : 'none';
+    document.getElementById('repRangeControls').style.display = currentRepMode==='range' ? 'flex' : 'none';
+    document.getElementById('repItemControls').style.display = currentRepMode==='item' ? 'flex' : 'none';
+    // refresh item select when switching to item mode
+    if(currentRepMode==='item'){
+      const itemSel = document.getElementById('repItemSel');
+      itemSel.innerHTML = '';
+      const itemNames = [...new Set(transactions.map(t=>t.itemName))].sort();
+      itemNames.forEach(n => {
+        const o = document.createElement('option');
+        o.value = n; o.textContent = n;
+        itemSel.appendChild(o);
+      });
+    }
+  });
+
   document.getElementById('genReportBtn').onclick = generateReport;
+  document.getElementById('printReportBtn').onclick = () => {
+    if(!document.getElementById('reportContent').innerHTML.trim()){ toast('Generate report first'); return; }
+    window.print();
+  };
+
+  function buildBarSVG(data, colorIn, colorOut){
+    if(!data.length) return '';
+    const W=520, H=120, pad=30, barW=Math.max(4, Math.floor((W-pad*2)/data.length)-4);
+    const maxVal = Math.max(...data.map(d=>Math.max(d.in,d.out)),1);
+    const scl = (v) => Math.round((v/maxVal)*(H-20));
+    let bars='', labels='';
+    data.forEach((d,i)=>{
+      const x = pad + i*((W-pad*2)/data.length);
+      const inH = scl(d.in), outH = scl(d.out);
+      bars += `<rect x="${x}" y="${H-inH-2}" width="${barW}" height="${inH}" fill="${colorIn}" rx="2" opacity="0.85"/>`;
+      bars += `<rect x="${x+barW+1}" y="${H-outH-2}" width="${barW}" height="${outH}" fill="${colorOut}" rx="2" opacity="0.85"/>`;
+      if(data.length <= 31) labels += `<text x="${x+barW}" y="${H+12}" text-anchor="middle" font-size="8" fill="#8B5A1F">${d.label}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H+18}" style="width:100%;height:140px;display:block">
+      <line x1="${pad}" y1="${H-2}" x2="${W-pad}" y2="${H-2}" stroke="#e0d4c0" stroke-width="1"/>
+      ${bars}${labels}
+      <rect x="4" y="4" width="10" height="8" fill="${colorIn}" rx="2"/><text x="18" y="12" font-size="9" fill="#3d6b53">IN</text>
+      <rect x="44" y="4" width="10" height="8" fill="${colorOut}" rx="2"/><text x="58" y="12" font-size="9" fill="#9B2C3F">OUT</text>
+    </svg>`;
+  }
 
   function generateReport(){
-    const m = parseInt(document.getElementById('repMonth').value);
-    const y = parseInt(document.getElementById('repYear').value);
-    const start = new Date(y, m, 1);
-    const end = new Date(y, m+1, 1);
-    const monthName = ['January','February','March','April','May','June','July','August','September','October','November','December'][m];
+    populateReportSelectors();
+    let txInRange = [], label = '', start, end;
 
-    const txInRange = transactions.filter(t => {
-      const d = new Date(t.date);
-      return d >= start && d < end;
-    });
+    if(currentRepMode === 'monthly'){
+      const m = parseInt(document.getElementById('repMonth').value);
+      const y = parseInt(document.getElementById('repYear').value);
+      start = new Date(y, m, 1);
+      end = new Date(y, m+1, 1);
+      label = ['January','February','March','April','May','June','July','August','September','October','November','December'][m] + ' ' + y;
+      txInRange = transactions.filter(t => { const d=new Date(t.date); return d>=start && d<end; });
 
-    const ins = txInRange.filter(t=>t.type==='in');
+    } else if(currentRepMode === 'range'){
+      const fromVal = document.getElementById('repFrom').value;
+      const toVal = document.getElementById('repTo').value;
+      if(!fromVal||!toVal){ toast('Select both dates'); return; }
+      start = new Date(fromVal);
+      end = new Date(toVal); end.setDate(end.getDate()+1);
+      label = fromVal + ' → ' + toVal;
+      txInRange = transactions.filter(t => { const d=new Date(t.date); return d>=start && d<end; });
+
+    } else if(currentRepMode === 'item'){
+      const itemName = document.getElementById('repItemSel').value;
+      if(!itemName){ toast('Select an item'); return; }
+      txInRange = transactions.filter(t => t.itemName === itemName);
+      label = itemName + ' — All Time';
+      if(txInRange.length){
+        const dates = txInRange.map(t=>new Date(t.date));
+        start = new Date(Math.min(...dates));
+        end = new Date(Math.max(...dates));
+      }
+    }
+
+    const ins  = txInRange.filter(t=>t.type==='in');
     const outs = txInRange.filter(t=>t.type==='out');
-    const totalIn = ins.reduce((s,t)=>s+t.qty, 0);
+    const totalIn  = ins.reduce((s,t)=>s+t.qty, 0);
     const totalOut = outs.reduce((s,t)=>s+t.qty, 0);
     const uniqueItems = [...new Set(txInRange.map(t=>t.itemName))];
 
@@ -1664,27 +1976,48 @@ window.storageReady = (async function initStorage(){
     txInRange.forEach(t => {
       if(!byItem[t.itemName]) byItem[t.itemName] = {name:t.itemName, category:t.category, totalIn:0, totalOut:0, txCount:0};
       if(t.type==='in') byItem[t.itemName].totalIn += t.qty;
-      else byItem[t.itemName].totalOut += t.qty;
+      else              byItem[t.itemName].totalOut += t.qty;
       byItem[t.itemName].txCount++;
     });
     const itemSummary = Object.values(byItem).sort((a,b)=>(b.totalIn+b.totalOut)-(a.totalIn+a.totalOut));
 
     // Top sources & destinations
-    const sources = {};
-    const dests = {};
-    ins.forEach(t=>{ sources[t.from||'Unknown'] = (sources[t.from||'Unknown']||0)+t.qty; });
-    outs.forEach(t=>{ dests[t.to||'Unknown'] = (dests[t.to||'Unknown']||0)+t.qty; });
+    const sources={}, dests={};
+    ins.forEach(t=>{ sources[t.from||'Unknown']=(sources[t.from||'Unknown']||0)+t.qty; });
+    outs.forEach(t=>{ dests[t.to||'Unknown']=(dests[t.to||'Unknown']||0)+t.qty; });
     const topSources = Object.entries(sources).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    const topDests = Object.entries(dests).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const topDests   = Object.entries(dests).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-    lastReport = {month:monthName, year:y, txInRange, itemSummary, topSources, topDests, totalIn, totalOut, uniqueItems};
+    // Daily breakdown for chart
+    const dayMap = {};
+    txInRange.forEach(t => {
+      const day = t.date.slice(0,10);
+      if(!dayMap[day]) dayMap[day] = {in:0,out:0};
+      if(t.type==='in') dayMap[day].in += t.qty;
+      else              dayMap[day].out += t.qty;
+    });
+    const days = Object.keys(dayMap).sort();
+    const chartData = days.map(d=>({ label:d.slice(5), in:dayMap[d].in, out:dayMap[d].out }));
+    const barSVG = buildBarSVG(chartData, '#6FA88B', '#9B2C3F');
+
+    // Category breakdown
+    const byCat = {};
+    txInRange.forEach(t=>{
+      const c = t.category||'Other';
+      if(!byCat[c]) byCat[c]={in:0,out:0};
+      if(t.type==='in') byCat[c].in += t.qty;
+      else byCat[c].out += t.qty;
+    });
+    const catSummary = Object.entries(byCat).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out));
+
+    lastReport = {label, txInRange, itemSummary, topSources, topDests, totalIn, totalOut, uniqueItems};
 
     const html = `
+      <div id="printableReport">
       <div class="report-summary">
         <div class="report-card">
           <div class="lbl">Period</div>
-          <div class="val">${monthName}</div>
-          <div class="sub">${y}</div>
+          <div class="val" style="font-size:20px;line-height:1.3">${label}</div>
         </div>
         <div class="report-card">
           <div class="lbl">Total Transactions</div>
@@ -1694,17 +2027,17 @@ window.storageReady = (async function initStorage(){
         <div class="report-card in">
           <div class="lbl">Total Units In</div>
           <div class="val">${totalIn}</div>
-          <div class="sub">Received this month</div>
+          <div class="sub">Received</div>
         </div>
         <div class="report-card out">
           <div class="lbl">Total Units Out</div>
           <div class="val">${totalOut}</div>
-          <div class="sub">Distributed this month</div>
+          <div class="sub">Distributed</div>
         </div>
         <div class="report-card">
           <div class="lbl">Unique Items</div>
           <div class="val">${uniqueItems.length}</div>
-          <div class="sub">Different sweets handled</div>
+          <div class="sub">Different sweets</div>
         </div>
         <div class="report-card">
           <div class="lbl">Net Movement</div>
@@ -1713,47 +2046,84 @@ window.storageReady = (async function initStorage(){
         </div>
       </div>
 
+      ${chartData.length > 1 ? `
+      <div class="section-title">Daily Movement Chart</div>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 12px 8px">
+        ${barSVG}
+      </div>` : ''}
+
       <div class="section-title">Item Summary</div>
       <div class="log-table">
-        <div class="log-row header" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr">
-          <div>Sweet Item</div><div>Category</div><div>In</div><div>Out</div><div>Net</div>
+        <div class="log-row header" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr 60px">
+          <div>Sweet Item</div><div>Category</div><div>In</div><div>Out</div><div>Net</div><div>Tx#</div>
         </div>
         ${itemSummary.length===0
           ? '<div class="empty" style="padding:40px"><p>No transactions in this period</p></div>'
           : itemSummary.map(it=>`
-            <div class="log-row" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr">
+            <div class="log-row" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr 60px">
               <div class="log-item-name">${esc(it.name)}</div>
               <div class="log-meta">${esc(it.category||'—')}</div>
               <div style="color:#3d6b53;font-weight:600">+${it.totalIn}</div>
               <div style="color:var(--berry);font-weight:600">−${it.totalOut}</div>
               <div style="font-weight:600;color:${it.totalIn-it.totalOut>=0?'var(--chocolate)':'var(--berry)'}">${it.totalIn-it.totalOut>=0?'+':''}${it.totalIn-it.totalOut}</div>
+              <div class="log-meta">${it.txCount}</div>
             </div>`).join('')}
       </div>
+
+      ${catSummary.length > 0 ? `
+      <div class="section-title">Category Breakdown</div>
+      <div class="log-table">
+        <div class="log-row header" style="grid-template-columns:2fr 1fr 1fr 1fr">
+          <div>Category</div><div>In</div><div>Out</div><div>Net</div>
+        </div>
+        ${catSummary.map(([c,v])=>`
+          <div class="log-row" style="grid-template-columns:2fr 1fr 1fr 1fr">
+            <div class="log-item-name" style="font-size:14px">${esc(c)}</div>
+            <div style="color:#3d6b53;font-weight:600">+${v.in}</div>
+            <div style="color:var(--berry);font-weight:600">−${v.out}</div>
+            <div style="font-weight:600;color:${v.in-v.out>=0?'var(--chocolate)':'var(--berry)'}">${v.in-v.out>=0?'+':''}${v.in-v.out}</div>
+          </div>`).join('')}
+      </div>` : ''}
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px" class="report-cols">
         <div>
           <div class="section-title" style="margin-top:0">Top Sources (Where it came from)</div>
           <div class="log-table">
-            ${topSources.length===0 ? '<div class="empty" style="padding:40px"><p>No data</p></div>'
+            ${topSources.length===0 ? '<div class="empty" style="padding:30px"><p>No data</p></div>'
               : topSources.map(([s,q])=>`
                 <div class="log-row" style="grid-template-columns:2fr 1fr">
                   <div class="log-item-name" style="font-size:14px">${esc(s)}</div>
-                  <div style="color:#3d6b53;font-weight:600;font-family:'Fraunces',serif;font-size:18px">${q} units</div>
+                  <div style="color:#3d6b53;font-weight:600;font-family:'Fraunces',serif;font-size:18px">${q}</div>
                 </div>`).join('')}
           </div>
         </div>
         <div>
           <div class="section-title" style="margin-top:0">Top Destinations (Where it went)</div>
           <div class="log-table">
-            ${topDests.length===0 ? '<div class="empty" style="padding:40px"><p>No data</p></div>'
+            ${topDests.length===0 ? '<div class="empty" style="padding:30px"><p>No data</p></div>'
               : topDests.map(([d,q])=>`
                 <div class="log-row" style="grid-template-columns:2fr 1fr">
                   <div class="log-item-name" style="font-size:14px">${esc(d)}</div>
-                  <div style="color:var(--berry);font-weight:600;font-family:'Fraunces',serif;font-size:18px">${q} units</div>
+                  <div style="color:var(--berry);font-weight:600;font-family:'Fraunces',serif;font-size:18px">${q}</div>
                 </div>`).join('')}
           </div>
         </div>
       </div>
+
+      ${days.length > 0 ? `
+      <div class="section-title">Daily Breakdown</div>
+      <div class="log-table">
+        <div class="log-row header" style="grid-template-columns:1.5fr 1fr 1fr 1fr">
+          <div>Date</div><div>In</div><div>Out</div><div>Net</div>
+        </div>
+        ${days.map(d=>`
+          <div class="log-row" style="grid-template-columns:1.5fr 1fr 1fr 1fr">
+            <div class="log-date">${d}</div>
+            <div style="color:#3d6b53;font-weight:600">+${dayMap[d].in}</div>
+            <div style="color:var(--berry);font-weight:600">−${dayMap[d].out}</div>
+            <div style="font-weight:600;color:${dayMap[d].in-dayMap[d].out>=0?'var(--chocolate)':'var(--berry)'}">${dayMap[d].in-dayMap[d].out>=0?'+':''}${dayMap[d].in-dayMap[d].out}</div>
+          </div>`).join('')}
+      </div>` : ''}
 
       <div class="section-title">Full Transaction Detail</div>
       <div class="log-table">
@@ -1761,7 +2131,7 @@ window.storageReady = (async function initStorage(){
           <div>Type</div><div>Item</div><div>Category</div><div>Qty</div><div>From</div><div>To</div><div>Date</div><div></div>
         </div>
         ${txInRange.length===0 ? '<div class="empty" style="padding:40px"><p>No transactions in this period</p></div>'
-          : txInRange.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>`
+          : txInRange.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>`
             <div class="log-row">
               <div><span class="log-type ${t.type}">${t.type==='in'?'⬇ In':'⬆ Out'}</span></div>
               <div class="log-item-name">${esc(t.itemName)}</div>
@@ -1773,17 +2143,18 @@ window.storageReady = (async function initStorage(){
               <div></div>
             </div>`).join('')}
       </div>
+      </div>
     `;
     document.getElementById('reportContent').innerHTML = html;
-    toast(`Report for ${monthName} ${y}`);
+    toast(`Report: ${label}`);
   }
 
   document.getElementById('downloadReportBtn').onclick = () => {
     if(!lastReport){ toast('Generate report first'); return; }
     const r = lastReport;
     const lines = [];
-    lines.push(`Windmill Kitchen — Monthly Report`);
-    lines.push(`Period: ${r.month} ${r.year}`);
+    lines.push(`Windmill Kitchen — Report`);
+    lines.push(`Period: ${r.label}`);
     lines.push(`Generated: ${fmtDate(new Date().toISOString())}`);
     lines.push('');
     lines.push('SUMMARY');
@@ -1822,7 +2193,8 @@ window.storageReady = (async function initStorage(){
         `"${(t.notes||'').replace(/[\r\n]+/g,' ').replace(/"/g,'""')}"`
       ].join(','));
     });
-    downloadFile(lines.join('\n'), `windmill-report-${r.month}-${r.year}.csv`, 'text/csv');
+    const safeLabel = r.label.replace(/[^a-zA-Z0-9-]/g,'-').replace(/-+/g,'-');
+    downloadFile(lines.join('\n'), `windmill-report-${safeLabel}.csv`, 'text/csv');
     toast('Report downloaded');
   };
 
@@ -1929,13 +2301,7 @@ window.storageReady = (async function initStorage(){
     });
   };
 
-  // render team list when settings tab opened
-  document.querySelectorAll('.tab').forEach(tab=>{
-    const orig = tab.onclick;
-    tab.addEventListener('click', ()=>{
-      if(tab.dataset.panel==='settings') renderTeamList();
-    });
-  });
+  // render team list when settings tab opened - handled by navigateToTab
 
   // ===== CLOCK =====
   function tick(){
