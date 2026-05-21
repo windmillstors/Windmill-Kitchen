@@ -314,6 +314,26 @@
     .log-mobile{display:block}
     .report-card .val{font-size:26px}
   }
+
+  /* ===== SYNC DEBUG PANEL ===== */
+  .wm-debug{position:fixed;right:16px;bottom:16px;z-index:9999;font-family:'DM Mono',monospace}
+  .wm-debug-toggle{display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--chocolate);color:var(--cream);border:none;border-radius:999px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;box-shadow:var(--shadow-warm);letter-spacing:.04em}
+  .wm-debug-toggle .d-dot{width:8px;height:8px;border-radius:50%;background:#9B2C3F;flex-shrink:0}
+  .wm-debug-toggle .d-dot.ok{background:#22a36a;box-shadow:0 0 0 0 rgba(34,163,106,.5);animation:pulse 1.8s infinite}
+  .wm-debug-body{display:none;width:300px;max-width:calc(100vw - 32px);margin-top:10px;background:var(--paper);border:1px solid var(--line-strong);border-radius:14px;box-shadow:var(--shadow-soft);overflow:hidden}
+  .wm-debug.open .wm-debug-body{display:block}
+  .wm-debug-head{padding:11px 14px;background:var(--cream-2);border-bottom:1px solid var(--line);font-size:11px;font-weight:500;color:var(--chocolate);text-transform:uppercase;letter-spacing:.12em;display:flex;justify-content:space-between;align-items:center}
+  .wm-debug-rows{padding:10px 14px;display:grid;gap:7px}
+  .wm-drow{display:flex;justify-content:space-between;gap:10px;font-size:11px}
+  .wm-drow .k{color:var(--caramel-deep)}
+  .wm-drow .v{color:var(--chocolate);text-align:right;font-weight:500}
+  .wm-drow .v.bad{color:var(--berry)}
+  .wm-drow .v.good{color:#3d6b53}
+  .wm-debug-log{border-top:1px solid var(--line);max-height:160px;overflow-y:auto;padding:8px 14px;background:var(--cream)}
+  .wm-logline{font-size:10px;line-height:1.5;color:var(--chocolate-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wm-logline .ts{color:var(--caramel-deep)}
+  .wm-logline.warn{color:#9a6a1f}
+  .wm-logline.error{color:var(--berry)}
 </style>
 
 <!-- CHEF AUTH MODAL (shown only when editing) -->
@@ -756,25 +776,122 @@
   <span id="toastText">Saved</span>
 </div>
 
-<script type="module">
-// Firebase keys can't contain . $ # [ ] / : — convert our "windmill:items:v2" style keys to safe paths
-function fbPath(key){ return 'windmill/' + String(key).replace(/[.$#\[\]\/:]/g, '_'); }
+<!-- ===== SYNC DEBUG PANEL ===== -->
+<div class="wm-debug" id="wmDebug">
+  <button class="wm-debug-toggle" id="wmDebugToggle" type="button">
+    <span class="d-dot" id="wmDot"></span><span id="wmToggleLabel">Sync</span>
+  </button>
+  <div class="wm-debug-body">
+    <div class="wm-debug-head">
+      <span>Sync Status</span>
+      <span id="wmHeadMode">—</span>
+    </div>
+    <div class="wm-debug-rows">
+      <div class="wm-drow"><span class="k">Firebase</span><span class="v" id="wmConn">—</span></div>
+      <div class="wm-drow"><span class="k">Mode</span><span class="v" id="wmMode">—</span></div>
+      <div class="wm-drow"><span class="k">Last sync</span><span class="v" id="wmLast">—</span></div>
+      <div class="wm-drow"><span class="k">Live listeners</span><span class="v" id="wmListeners">0</span></div>
+      <div class="wm-drow"><span class="k">Data source</span><span class="v" id="wmSource">—</span></div>
+    </div>
+    <div class="wm-debug-log" id="wmLog"></div>
+  </div>
+</div>
 
-// localStorage fallback shim — used if Firebase fails to load/connect, so the app ALWAYS works
+<script type="module">
+// ============================================================================
+//  WINDMILL STORAGE LAYER  —  Firestore edition
+//  Realtime Database (firebaseio.com long-polling) is unreliable / blocked on
+//  some networks (e.g. UAE ISPs) and was causing ERR_CONNECTION_RESET. Firestore
+//  uses firestore.googleapis.com over standard HTTPS, which connects reliably.
+//  The app talks to window.storage via .get/.set/.on — that interface is kept
+//  identical, so NONE of the UI / app logic had to change.
+// ============================================================================
+
+// Firestore doc IDs can't contain / — convert "windmill:items:v2" -> safe id
+function fbPath(key){ return String(key).replace(/[\/.#$\[\]]/g, '_'); }
+
+// ---- Debug bus: every storage event is logged here AND mirrored to the panel ----
+const WM_DEBUG = {
+  mode: 'connecting',          // firebase | local | connecting
+  connected: false,
+  lastSync: null,              // Date of last successful read/write/snapshot
+  listeners: 0,                // active realtime listeners
+  lastSource: '—',             // where the most recent data came from
+  log: []                      // recent log lines
+};
+function wmLog(line, level){
+  const t = new Date();
+  const stamp = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')}`;
+  WM_DEBUG.log.unshift({ stamp, line, level: level||'info' });
+  if(WM_DEBUG.log.length > 40) WM_DEBUG.log.pop();
+  (level==='error'?console.error: level==='warn'?console.warn: console.log)('Windmill:', line);
+  if(window.__wmRenderDebug) window.__wmRenderDebug();
+}
+function wmTouchSync(source){
+  WM_DEBUG.lastSync = new Date();
+  if(source) WM_DEBUG.lastSource = source;
+  if(window.__wmRenderDebug) window.__wmRenderDebug();
+}
+
+// ---- Debug panel renderer + toggle ----
+(function wireDebugPanel(){
+  function fmtAgo(d){
+    if(!d) return '—';
+    const s = Math.round((Date.now()-d.getTime())/1000);
+    if(s<2) return 'just now';
+    if(s<60) return s+'s ago';
+    const m=Math.floor(s/60); if(m<60) return m+'m ago';
+    return Math.floor(m/60)+'h ago';
+  }
+  function setText(id,txt,cls){
+    const el=document.getElementById(id); if(!el) return;
+    el.textContent=txt; el.classList.remove('good','bad');
+    if(cls) el.classList.add(cls);
+  }
+  window.__wmRenderDebug = function(){
+    const dot=document.getElementById('wmDot');
+    if(dot) dot.classList.toggle('ok', WM_DEBUG.connected);
+    setText('wmHeadMode', WM_DEBUG.connected?'LIVE':'LOCAL', WM_DEBUG.connected?'good':'bad');
+    setText('wmConn', WM_DEBUG.connected?'Connected':'Disconnected', WM_DEBUG.connected?'good':'bad');
+    setText('wmMode', WM_DEBUG.mode==='firebase'?'Firestore (cloud)':WM_DEBUG.mode==='local'?'Local cache':'Connecting…');
+    setText('wmLast', fmtAgo(WM_DEBUG.lastSync));
+    setText('wmListeners', String(WM_DEBUG.listeners));
+    setText('wmSource', WM_DEBUG.lastSource);
+    const logEl=document.getElementById('wmLog');
+    if(logEl){
+      logEl.innerHTML = WM_DEBUG.log.map(l=>
+        `<div class="wm-logline ${l.level}"><span class="ts">${l.stamp}</span> ${l.line.replace(/</g,'&lt;')}</div>`
+      ).join('');
+    }
+  };
+  function init(){
+    const wrap=document.getElementById('wmDebug');
+    const tog=document.getElementById('wmDebugToggle');
+    if(tog&&wrap) tog.addEventListener('click',()=>wrap.classList.toggle('open'));
+    window.__wmRenderDebug();
+    setInterval(()=>window.__wmRenderDebug(), 1000); // keep "last sync" fresh
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+// localStorage shim — used ONLY as an offline cache of last-known cloud state.
+// It is never the source of truth when Firebase is up.
 function makeLocalShim(){
   return {
     _fb:false,
-    async get(key){ const v = localStorage.getItem(fbPath(key)); return v===null ? null : { value:v }; },
-    async set(key,value){ localStorage.setItem(fbPath(key), value); return { value }; },
-    on(){ /* no remote sync in fallback mode */ return ()=>{}; }
+    async get(key){ const v = localStorage.getItem('wm_'+fbPath(key)); return v===null ? null : { value:v }; },
+    async set(key,value){ try{ localStorage.setItem('wm_'+fbPath(key), value); }catch(e){} return { value }; },
+    on(){ return ()=>{}; }
   };
 }
+// Write-through cache helpers (so a fresh device has *something* before first snapshot)
+function cacheGet(key){ try{ return localStorage.getItem('wm_'+fbPath(key)); }catch(e){ return null; } }
+function cacheSet(key,val){ try{ localStorage.setItem('wm_'+fbPath(key), val); }catch(e){} }
 
-// Default to the fallback first so window.storage is ALWAYS defined before app code runs.
 const localShim = makeLocalShim();
-window.storage = localShim;
+window.storage = localShim;     // always defined before app code runs
 
-// helper: race any promise against a timeout
 function withTimeout(promise, ms, label){
   return Promise.race([
     promise,
@@ -782,81 +899,103 @@ function withTimeout(promise, ms, label){
   ]);
 }
 
-// window.storageReady resolves once we've DECIDED on Firebase vs localStorage.
-// The app (loadAll + live-sync listeners) waits for this, so listeners always
-// bind to the FINAL storage object — never the temporary fallback. This removes
-// the race condition that could silently kill real-time sync.
+// window.storageReady resolves once we've DECIDED on Firestore vs local cache.
 window.storageReady = (async function initStorage(){
-  // Firebase needs an http(s) origin. Opened straight from disk (file://) it can't
-  // connect, so don't even try — go straight to local mode with a clear message.
   if(location.protocol === 'file:'){
-    console.warn('Windmill: opened as a file:// page — real-time sync is OFF. '
-      + 'Host this file (e.g. python -m http.server, Netlify, or Firebase Hosting) '
-      + 'and open it via http:// to sync across devices. Using LOCAL storage for now.');
-    window.storage = localShim;
+    wmLog('opened as file:// — host via http(s) to sync across devices. Using local cache.', 'warn');
+    WM_DEBUG.mode = 'local'; window.storage = localShim;
     return 'local-file';
   }
 
   try{
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-    const { getDatabase, ref, get, set, onValue } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+    const {
+      getFirestore, doc, getDoc, setDoc, onSnapshot, enableIndexedDbPersistence
+    } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
 
-    // ⚠️  Replace these values with your own Firebase project credentials.
-    // Never commit real keys to version control. Use environment variables
-    // or a server-side config endpoint to inject them at deploy time.
     const firebaseConfig = {
-      apiKey: window.FIREBASE_API_KEY || "AIzaSyCg9-Nn1BuNkDtyOfZ7kh2g3f6iQJPSd6g",
-      databaseURL: window.FIREBASE_DATABASE_URL || "https://windmill-kitchen-default-rtdb.firebaseio.com/",
-      projectId: window.FIREBASE_PROJECT_ID || "windmill-kitchen"
+      apiKey:      window.FIREBASE_API_KEY      || "AIzaSyCg9-Nn1BuNkDtyOfZ7kh2g3f6iQJPSd6g",
+      projectId:   window.FIREBASE_PROJECT_ID   || "windmill-kitchen",
+      databaseURL: window.FIREBASE_DATABASE_URL || "https://windmill-kitchen-default-rtdb.firebaseio.com/"
     };
-    if(!firebaseConfig.apiKey || !firebaseConfig.databaseURL){
-      throw new Error("Firebase config not set — falling back to local storage");
-    }
+
     const fbApp = initializeApp(firebaseConfig);
-    const fbDb  = getDatabase(fbApp);
+    const fbDb  = getFirestore(fbApp);
 
-    // Quick connectivity test — if the DB doesn't answer in 6s, we give up and use localStorage.
-    await withTimeout(get(ref(fbDb, fbPath('__healthcheck'))), 6000, 'healthcheck');
+    // Offline persistence — Firestore keeps a local mirror and replays writes when
+    // the connection returns. Best-effort; ignore if a second tab already holds it.
+    try{ await enableIndexedDbPersistence(fbDb); }catch(e){ /* multi-tab or unsupported — fine */ }
 
-    // Connection works. Build a Firebase shim, but every call still has its own timeout
-    // and falls back to localStorage if Firebase is slow, so the UI NEVER freezes.
+    const colName = 'windmill';                       // single collection
+    const docRef  = (key)=> doc(fbDb, colName, fbPath(key));
+
+    // Connectivity probe: read one doc. On a clean project this just returns "not exists"
+    // (no error) which still proves we reached Firestore.
+    await withTimeout(getDoc(docRef('__healthcheck')), 8000, 'healthcheck');
+
     window.storage = {
       _fb:true,
+      // READ — Firestore is source of truth; fall back to cache only on failure
       async get(key){
         try{
-          const snap = await withTimeout(get(ref(fbDb, fbPath(key))), 5000, 'get');
+          const snap = await withTimeout(getDoc(docRef(key)), 8000, 'get:'+key);
+          wmTouchSync('Firebase');
           if(snap.exists()){
-            return { value: snap.val() };
-          } else {
-            return null;
+            const v = snap.data().value;
+            cacheSet(key, v);                          // refresh local cache
+            return { value: v };
           }
+          return null;
         }catch(e){
-          // Firebase unreachable — fall back to local cache
-          console.warn('FB get fell back to local:', key, e.message);
-          return localShim.get(key);
+          wmLog('read failed, using cache for '+key+' ('+e.message+')', 'warn');
+          WM_DEBUG.lastSource = 'local cache';
+          const c = cacheGet(key);
+          return c===null ? null : { value:c };
         }
       },
+      // WRITE — push to Firestore; this fires onSnapshot on every device
       async set(key, value){
-        // Push to Firebase — this triggers all devices' onValue listeners instantly
+        cacheSet(key, value);                          // write-through cache first
         try{
-          await withTimeout(set(ref(fbDb, fbPath(key)), value), 5000, 'set');
-        }catch(e){ console.warn('FB set fell back to local:', key, e.message); localShim.set(key, value); }
+          await withTimeout(setDoc(docRef(key), { value, updatedAt: Date.now() }), 9000, 'set:'+key);
+          wmTouchSync('Firebase');
+        }catch(e){
+          // Firestore offline-persistence will queue and replay this when back online
+          wmLog('write queued (offline?) for '+key+' ('+e.message+')', 'warn');
+        }
         return { value };
       },
+      // REALTIME — onSnapshot pushes changes from ANY device instantly
       on(key, cb){
+        WM_DEBUG.listeners++;
+        if(window.__wmRenderDebug) window.__wmRenderDebug();
+        let unsub = ()=>{};
         try{
-          return onValue(ref(fbDb, fbPath(key)), (snap)=>{
-            const val = snap.exists() ? snap.val() : null;
-            cb(val);
-          }, (err)=>console.warn('FB listener error:', key, err.message));
-        }catch(e){ return ()=>{}; }
+          unsub = onSnapshot(docRef(key),
+            { includeMetadataChanges:false },
+            (snap)=>{
+              const fromCache = snap.metadata.fromCache;
+              const val = snap.exists() ? snap.data().value : null;
+              if(val!==null) cacheSet(key, val);
+              wmTouchSync(fromCache ? 'local cache' : 'Firebase (live)');
+              cb(val);
+            },
+            (err)=>wmLog('listener error '+key+': '+err.message, 'error')
+          );
+        }catch(e){ wmLog('listener bind failed '+key+': '+e.message, 'error'); }
+        return ()=>{ WM_DEBUG.listeners=Math.max(0,WM_DEBUG.listeners-1); try{unsub();}catch(_){}
+                    if(window.__wmRenderDebug) window.__wmRenderDebug(); };
       }
     };
-    console.log('Windmill: connected to Firebase ✓ — real-time sync ON');
+
+    WM_DEBUG.mode = 'firebase'; WM_DEBUG.connected = true;
+    wmLog('connected to Firestore ✓ — real-time sync ON', 'info');
+    wmTouchSync('Firebase');
     return 'firebase';
   }catch(err){
+    WM_DEBUG.mode = 'local'; WM_DEBUG.connected = false;
     window.storage = localShim;
-    console.warn('Windmill: Firebase unavailable — using LOCAL storage on this device only. Data will NOT sync across devices.', err && err.message);
+    wmLog('Firestore unavailable — using LOCAL cache only, no cross-device sync. ('+(err&&err.message)+')', 'error');
     return 'local-error';
   }
 })();
@@ -1016,20 +1155,33 @@ Click OK to reassign them to Other, or Cancel to keep the category.`;
   async function loadAll(){
     await loadCats();
     await loadTeam();
+    // Is the cloud actually connected? If not, we must NOT seed sample data,
+    // because pushing samples would overwrite real cloud data once we reconnect.
+    const cloudUp = !!(window.storage && window.storage._fb);
     let hadItems = false, hadTx = false;
     try{
       const itResult = await window.storage.get(K_ITEMS);
       hadItems = !!itResult;
-      items = itResult ? JSON.parse(itResult.value) : [...SAMPLE_ITEMS];
-    }catch(e){ items = [...SAMPLE_ITEMS]; }
+      items = itResult ? JSON.parse(itResult.value) : [];
+    }catch(e){ items = []; }
     try{
       const txResult = await window.storage.get(K_TX);
       hadTx = !!txResult;
-      transactions = txResult ? JSON.parse(txResult.value) : [...SAMPLE_TX];
-    }catch(e){ transactions = [...SAMPLE_TX]; }
-    // Seed sample data only the first time (when nothing was stored yet).
-    if(!hadItems) await saveItems();
-    if(!hadTx) await saveTx();
+      transactions = txResult ? JSON.parse(txResult.value) : [];
+    }catch(e){ transactions = []; }
+
+    // Seed sample data ONLY when we're truly connected to the cloud and it's empty.
+    // (A brand-new project. Offline => leave arrays empty and wait for the live
+    // snapshot to deliver the real data, so we never clobber other drivers' work.)
+    if(cloudUp){
+      if(!hadItems){ items = [...SAMPLE_ITEMS]; await saveItems(); }
+      if(!hadTx){ transactions = [...SAMPLE_TX]; await saveTx(); }
+    } else {
+      // offline: fall back to samples only if cache had nothing, purely so the
+      // screen isn't blank — these are NEVER written to the cloud here.
+      if(!hadItems) items = [...SAMPLE_ITEMS];
+      if(!hadTx) transactions = [...SAMPLE_TX];
+    }
     renderAll();
   }
   // Track the last value WE wrote for each key, so we can ignore our own Firebase echo
